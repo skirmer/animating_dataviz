@@ -1,0 +1,265 @@
+---
+title: "Animation Example"
+output: 
+    html_document:
+        toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(ggplot2)
+library(gganimate)
+library(feather)
+library(skimr)
+library(dplyr)
+library(gifski)
+library(transformr)
+
+dtset <- read.csv("data/unhcr-time-series-residing-zaf-csv-1.csv", skip = 1)
+names(dtset) <- gsub("\\.", "_", names(dtset))
+names(dtset)
+```
+
+
+# From Grouped Bars to a Race Plot
+
+Task: show data across many levels of a facet
+
+Problems: Facet grid and facet wrap rapidly get out of their depth
+
+Questions: Is it important to see all the data at one time? 
+
+## Glance at the Data
+```{r}
+head(dtset)
+
+plotDT <- dtset %>%
+  filter(X_country_origin != "Various/Unknown") %>%
+  filter(X_population_type == "Refugees (incl. refugee-like situations)") %>%
+  filter(X_date_year > 1995) %>%
+  group_by(X_date_year) %>%
+  mutate(rank = min_rank(-X_affected) * 1) %>%
+  ungroup() %>%
+  filter(rank <= 10)
+
+tail(plotDT)
+
+plotDT$X_country_origin <- ifelse(plotDT$X_country_origin == "Serbia and Kosovo (S/RES/1244 (1999))", "Serbia/Kosovo", as.character(plotDT$X_country_origin))
+
+plotDT[plotDT$X_affected == max(plotDT$X_affected),]
+
+plotDT$state_time <- ifelse(plotDT$X_date_year == max(plotDT$X_date_year), 5, 1)
+
+```
+
+
+## Raw plot, neither faceted nor animated
+
+Here the x axis is date, with bars grouped by country
+
+```{r}
+baseplot1 <- ggplot(plotDT, 
+    # Set aesthetics
+    aes(X_date_year, 
+        group = X_country_origin, 
+        fill = as.factor(X_country_origin), 
+        color = as.factor(X_country_origin)))+
+    theme_bw()+
+    theme(legend.position = "bottom")+
+    geom_bar(aes(y = X_affected), stat = "identity", position = "dodge")
+
+baseplot1
+```
+
+## Flip axis directions
+
+```{r}
+baseplot2 <- ggplot(plotDT, 
+    # Set aesthetics
+    aes(X_date_year, 
+        group = X_country_origin, 
+        fill = as.factor(X_country_origin), 
+        color = as.factor(X_country_origin)))+
+    theme_bw()+
+    theme(legend.position = "bottom")+
+    coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) +
+    geom_bar(aes(y = X_affected), stat = "identity", position = "dodge")
+
+baseplot2
+```
+
+## Add descriptive labels
+
+```{r}
+baseplot2 <- ggplot(plotDT, 
+    # Set aesthetics
+    aes(X_date_year, 
+        group = X_country_origin, 
+        fill = as.factor(X_country_origin), 
+        color = as.factor(X_country_origin)))+
+    theme_bw()+
+    theme(legend.position = "bottom")+
+        geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
+    geom_text(aes(y = X_affected, 
+        label = as.character(X_affected)), 
+        color = "black", vjust = 0.2, hjust = -.5)+
+    coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) +
+    geom_bar(aes(y = X_affected), stat = "identity", position = "dodge")
+
+baseplot2
+```
+
+
+## Stop the bar grouping (dodge), switch axis to country from year
+
+
+```{r}
+baseplot2 <- ggplot(plotDT, 
+    # Set aesthetics
+    aes(x=rank, 
+        group = X_country_origin, 
+        fill = as.factor(X_country_origin), 
+        color = as.factor(X_country_origin)))+
+    theme_bw()+
+    theme(legend.position = "bottom")+
+    geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
+    geom_text(aes(y = X_affected, 
+        label = as.character(X_affected)), 
+        color = "black", vjust = 0.2, hjust = -.5)+
+    coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) +
+    geom_bar(aes(y = X_affected), stat = "identity", position = "identity")
+
+baseplot2
+```
+
+## Adjust margins, fix axis text, drop legend
+
+```{r}
+baseplot2 <- ggplot(plotDT, 
+    # Set aesthetics
+    aes(x=rank, 
+        group = X_country_origin, 
+        fill = as.factor(X_country_origin), 
+        color = as.factor(X_country_origin)))+
+    theme_bw()+
+    theme(legend.position = "none",
+        axis.ticks.y = element_blank(),  # These relate to the axes post-flip
+        axis.text.y  = element_blank(),  # These relate to the axes post-flip
+        axis.title.y = element_blank(),
+        plot.margin = margin(1,1,1,5, "cm"))+
+    geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
+    geom_text(aes(y = X_affected, 
+        label = as.character(X_affected)), 
+        color = "black", vjust = 0.2, hjust = -.5)+
+    coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) +
+    geom_bar(aes(y = X_affected), stat = "identity", position = "identity")
+
+baseplot2
+```
+
+
+## Prettify Y, reverse X direction
+
+```{r}
+
+plotDT2 <- plotDT[plotDT$X_date_year == 2002,]
+baseplot <- ggplot(plotDT, 
+    # Set aesthetics
+    aes(x = rank,
+        group = X_country_origin, 
+        fill = as.factor(X_country_origin), 
+        color = as.factor(X_country_origin)))+
+    theme_bw()+
+    theme(legend.position = "none",
+        axis.ticks.y = element_blank(),  # These relate to the axes post-flip
+        axis.text.y  = element_blank(),  # These relate to the axes post-flip
+        axis.title.y = element_blank(),
+        plot.margin = margin(1,1,1,5, "cm"))+
+    geom_bar(aes(y = X_affected), stat = "identity", position = "identity")+
+    geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
+    geom_text(aes(y = X_affected, 
+        label = as.character(X_affected)), 
+        color = "black", vjust = 0.2, hjust = -.5)+
+    scale_y_continuous(labels = scales::comma) +
+    scale_x_reverse() +
+    coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) 
+        
+baseplot
+```
+
+
+```{r, include = FALSE}
+
+baseplot <- ggplot(plotDT, 
+    # Set aesthetics
+    aes(rank, 
+        group = X_country_origin, 
+        fill = as.factor(X_country_origin), 
+        color = as.factor(X_country_origin))) +
+    # Thematic design chunks
+    theme_bw()+
+    theme(axis.ticks.y = element_blank(),  # These relate to the axes post-flip
+    axis.text.y  = element_blank(),  # These relate to the axes post-flip
+    axis.title.y = element_blank(),
+    plot.margin = margin(1,1,1,5, "cm"))+
+    # Using tiles instead of boxplot
+    geom_tile(aes(y = X_affected/2,
+        height = X_affected,
+        width = 0.9), alpha = 0.8, color = NA) +
+    # Add labels to make it readable
+    geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
+    geom_text(aes(y = X_affected, 
+        label = as.character(X_affected)), 
+        color = "black", vjust = 0.2, hjust = -.5) +
+    # Axes and coordinate systems
+    coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) +
+    scale_y_continuous(labels = scales::comma) +
+    scale_x_reverse() +
+    # No legends plz
+    guides(color = FALSE, fill = FALSE)
+
+ baseplot
+
+```
+
+
+# Ways to Render This
+
+We need to present the data on an annual basis in a way that tells us:
+
+1. What locations refugees come from
+
+These may be places with high instability or political turmoil at a given time
+
+2. How the top locations within a year compare to the other top 10 locations
+
+
+
+## Add Facets
+Not good.
+```{r}
+
+baseplot+facet_wrap(X_date_year~.)
+
+```
+```{r}
+
+baseplot+facet_grid(X_date_year~.)
+
+```
+
+## Animate
+
+```{r}
+
+animp <- baseplot+
+    labs(title = "Refugees Residing in South Africa by Origin, {closest_state}", y="Affected Persons")+
+    transition_states(
+        X_date_year,
+        transition_length = 4, 
+        state_length = c(rep(1, 21), 60))+
+  ease_aes('cubic-in') 
+
+animate(animp, fps = 20, duration = 20, width = 800, height = 600) 
+```
