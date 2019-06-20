@@ -1,0 +1,482 @@
+---
+title: "Animating Plots in R"
+author: "Stephanie Kirmer"
+date: "June 2019"
+output: 
+    ioslides_presentation:
+        widescreen: true
+---
+
+
+# Agenda
+
+**Animation: When and Why?**
+
+**Introducing the Tools**
+
+**Hands-On Tutorial**
+
+
+## So You're Thinking About Animating
+
+What are some reasons to animate a plot?
+
+### **Bad Reasons**
+
+- It's neat  
+- I want to show off  
+
+### **Good Reasons**
+
+- I have four or more data dimensions   
+- I want to display many levels of a single dimension  
+
+
+## Examples of Good Cases
+
+- data changing over a long period of time
+- groups of datapoints varying systematically
+
+Also: it is not necessary to see all the data points at the same time
+
+### Ask Yourself
+- What information do you want the audience to take away?  
+
+# The Tools
+
+
+## Packages to Use
+```{r}
+library(ggplot2) # make plots
+library(gganimate) # animate the plots
+library(gifski) # render gifs
+library(transformr) # insert smooth transformations
+```
+
+## Key Concepts
+
+### **Frame**
+- Animations are a series of single images (frames) strung together
+
+### **Transition**
+- How the visual rendering moves from frame to frame
+
+### **State**
+- The current frame at any given point in time
+
+### **Enter/Exit**
+- How datapoints with no predecessor or follower are handled
+
+
+
+# Tutorial
+
+## Project Overview
+
+Using data on displaced persons living in South Africa, show patterns and trends in refugee movement over twenty-plus years.
+
+**Task:** show complex data across many levels of a facet  
+**Problems:** Facet grid and facet wrap rapidly get out of their depth  
+
+Data Source: UNHCR via data.world: [https://data.world/unhcr/244d728f-06e6-4c25-8eed-69e8fe3bffe0](UNHCR's populations of concern residing in South Africa)
+
+## Load Data
+
+Grab dataset of displaced persons living in South Africa
+```{r, echo = FALSE}
+dtset <- read.csv("data/unhcr-time-series-residing-zaf-csv-1.csv", skip = 1)
+names(dtset) <- gsub("\\.", "_", names(dtset))
+
+knitr::kable(head(dtset, 4))
+```
+
+
+## Mutate Data
+
+Select the top 10 countries of origin for each year, apply some filters.
+
+```{r, message=FALSE, error=FALSE, warning=FALSE}
+library(magrittr)
+library(dplyr)
+
+plotDT <- dtset %>%
+  filter(X_country_origin != "Various/Unknown") %>%
+  filter(X_population_type == "Refugees (incl. refugee-like situations)") %>%
+  filter(X_date_year > 1995) %>%
+  group_by(X_date_year) %>%
+  mutate(rank = rank(-X_affected, ties.method = "first") * 1) %>%
+  ungroup() %>%
+  filter(rank <= 10) %>%
+  data.frame()
+```
+
+```{r, echo = FALSE}
+plotDT$X_country_origin <- ifelse(plotDT$X_country_origin == "Serbia and Kosovo (S/RES/1244 (1999))", "Serbia/Kosovo", as.character(plotDT$X_country_origin))
+plotDT$state_time <- ifelse(plotDT$X_date_year == max(plotDT$X_date_year), 5, 1)
+```
+
+## Our New Data
+
+```{r, echo=FALSE}
+knitr::kable(head(plotDT, 4))
+```
+
+## Grouped Bar Plot - Code
+
+```{r}
+baseplot1 <- ggplot(plotDT, 
+aes(X_date_year, 
+    group = X_country_origin, 
+    fill = as.factor(X_country_origin), 
+    color = as.factor(X_country_origin)))+
+theme_bw()+
+theme(legend.position = "bottom")+
+geom_bar(aes(y = X_affected), stat = "identity", position = "dodge")
+
+```
+
+## Grouped Bar Plot - Rendered
+
+Ew.
+
+```{r, echo=FALSE, fig.width = 10}
+baseplot1
+```
+
+
+## Adjustment 1: Flip Axis
+
+```{r, fig.width = 8, fig.height=4}
+baseplot2 <- baseplot1 +
+    coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000))
+
+
+```
+
+## Render
+
+```{r, echo=FALSE, fig.width = 10}
+baseplot2
+```
+
+
+## Adjustment 2: Add Descriptive Labels
+
+```{r, fig.width = 8, fig.height=3}
+baseplot2 <- baseplot2 +
+geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
+geom_text(aes(y = X_affected, 
+    label = as.character(X_affected)), 
+    color = "black", vjust = 0.2, hjust = -.5)
+
+```
+
+## Render
+
+```{r, echo=FALSE, fig.width = 10}
+baseplot2
+```
+
+
+## Adjustment 3: Stop the bar grouping (dodge), switch axis to country from year
+
+Can't use the same stub now.
+```{r}
+baseplot3 <- ggplot(plotDT, 
+aes(x=rank, 
+    group = X_country_origin, 
+    fill = as.factor(X_country_origin), 
+    color = as.factor(X_country_origin)))+
+theme_bw()+
+theme(legend.position = "bottom")+
+geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
+geom_text(aes(y = X_affected, 
+    label = as.character(X_affected)), 
+    color = "black", vjust = 0.2, hjust = -.5)+
+coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) +
+geom_bar(aes(y = X_affected), stat = "identity", position = "identity")
+
+```
+
+## Render
+
+```{r, echo=FALSE, fig.width = 10}
+baseplot3
+```
+
+
+## Check in: baseplot2 vs baseplot3
+
+Left side: grouped bar, sorted by year  
+Right side: not grouped bar, sorted by rank
+
+```{r, echo = FALSE, fig.width = 10}
+library(patchwork)
+baseplot2 + baseplot3 + plot_layout(ncol = 2)
+```
+
+
+## Adjustment 4: Adjust margins, fix axis text, drop legend
+
+If your stub has a `theme()` segment, applying a new one will overrule it.
+```{r}
+baseplot3 <- baseplot3 + 
+theme(legend.position = "none",
+    axis.ticks.y = element_blank(),  # These relate to the axes post-flip
+    axis.text.y  = element_blank(),  # These relate to the axes post-flip
+    axis.title.y = element_blank(),
+    plot.margin = margin(1,1,1,5, "cm"))
+
+```
+
+## Render
+
+```{r, echo=FALSE, fig.width = 10}
+baseplot3
+```
+
+
+## Adjustment 5: Prettify Y, reverse X direction
+
+```{r}
+
+baseplot3 <- baseplot3 +
+scale_y_continuous(labels = scales::comma) +
+scale_x_reverse()
+
+```
+
+
+## Render
+
+Now we have the different "frames" all layered on top of each other.
+```{r, echo = FALSE, fig.width = 10}
+baseplot3
+```
+
+## Decision Point: How to Proceed?
+We need to present the data on an annual basis in a way that tells us:
+
+1. What locations refugees come from  
+    - These may be places with high instability or political turmoil at a given time
+
+2. How the top locations within a year compare to the other top 10 locations
+
+## Faceting?
+
+```{r, echo = FALSE, fig.width = 10}
+baseplot3+facet_wrap(X_date_year~.)
+```
+
+No.
+
+
+## Faceting?
+
+```{r, echo = FALSE, fig.width = 10}
+baseplot3+facet_grid(X_date_year~.)
+```
+
+Definitely not.
+
+# Develop the Animation
+
+## Basic Version
+
+
+```{r}
+
+animp <- baseplot3 +
+transition_states(
+    X_date_year)
+
+```
+
+## Render
+
+- Moving between frames without transition smoothing   
+- Audience can't tell what the frames represent  
+- Y axis needs labeling  
+
+```{r, fig.width = 10, fig.height=6, echo = FALSE}
+
+animate(animp, fps = 10, duration = 20) 
+
+```
+
+
+## Second Iteration
+
+Added a descriptive title/label that indicate the year of the frame
+
+```{r}
+
+animp <- baseplot3 +
+  labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
+    , y="Affected Persons")+
+  transition_states(X_date_year)
+
+```
+
+## Render
+
+```{r, fig.width = 10, fig.height=6, echo = FALSE}
+
+animate(animp, fps = 10, duration = 20) 
+
+```
+
+## Transition Options: Exit/Enter
+
+Shrink and grow on exit and enter
+```{r}
+
+animp <- baseplot3 +
+labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
+  , y="Affected Persons")+
+transition_states(X_date_year)+
+enter_grow() +
+exit_shrink()
+
+```
+
+
+## Render
+
+Interesting, but probably not serving the project objectives
+
+```{r, fig.width = 10, fig.height=6, echo = FALSE}
+
+animate(animp, fps = 10, duration = 20) 
+
+```
+
+
+## Transition Options: Easing
+
+Ease between positions (moving on page, not exiting or entering)
+```{r}
+
+animp <- baseplot3 +
+labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
+  , y="Affected Persons")+
+transition_states(X_date_year)+
+ease_aes('quartic-in-out')
+
+```
+
+
+## Render
+
+Hopefully, the movement feels less abrasive to the eye
+
+```{r, fig.width = 10, fig.height=6, echo = FALSE}
+
+animate(animp, fps = 10, duration = 20) 
+
+```
+
+## Transition Options: Easing
+For fun, let's try "back" to see a springier approach
+
+```{r}
+
+animp <- baseplot3 +
+labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
+  , y="Affected Persons")+
+transition_states(X_date_year)+
+ease_aes('back-in-out')
+
+```
+
+
+## Render
+
+Feels a little cartoony- interesting, but again perhaps not what we need
+
+```{r, fig.width = 10, fig.height=6, echo = FALSE}
+
+animate(animp, fps = 10, duration = 20) 
+
+```
+
+## Transition Options: Timing
+
+- Set pace for the states/transitions  
+- Ensure no smoothing between the end and restarting  
+
+```{r}
+
+animp <- baseplot3 +
+labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
+  , y="Affected Persons")+
+transition_states(
+    X_date_year,
+    transition_length = 4, 
+    state_length = c(rep(3, 21), 30), 
+    wrap = FALSE)+
+ease_aes('quartic-in-out')+
+enter_fade() +
+exit_fade()
+
+```
+
+
+## Render
+
+Slower pace feels smoother
+
+```{r, fig.width = 10, fig.height=6, echo = FALSE}
+
+animate(animp, fps = 10, duration = 20) 
+
+```
+
+## Dissect Animation Code: Transition States
+
+```{r, eval=FALSE}
+transition_states(
+    X_date_year,
+    transition_length = 4, 
+    state_length = c(rep(1, 21), 30)
+  , wrap = FALSE)
+```
+
+Assign the frame unit- here we use the year.  
+
+Transition length is the period of time we use for change from frame to frame  
+- slow it down if you want a smooth looking animation   
+
+State length is the period of time where the frame stays static.  
+- here I am making the very last frame stay static longer   
+
+Wrap determines whether to apply transition smoothing between the end and restarting  
+
+Experiment with these settings to get the look you want!  
+
+
+## Render the Final Animation
+
+```{r, fig.width = 10, fig.height=6, eval=TRUE} 
+animate(animp, fps = 10, duration = 20, width = 700, height = 400) 
+```
+
+
+## Save the Animation
+
+```{r, eval=FALSE} 
+anim_save(filename = "final_race_plot.gif")
+```
+
+## Lessons to Take Away
+
+Figure out the in/out transitions that make sense and are not misleading
+
+Give the eye enough time to understand each state
+
+## References
+
+https://gganimate.com/
+
+https://ggplot2.tidyverse.org/
+
