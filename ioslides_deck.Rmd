@@ -25,19 +25,20 @@ What are some reasons to animate a plot?
 
 - It's neat  
 - I want to show off  
+- One of my dimensions is time  
 
 ### **Good Reasons**
 
-- I have four or more data dimensions   
+- I have four or more meaningful data dimensions   
 - I want to display many levels of a single dimension  
 
+Also: If you need to see all the data points at the same time DON'T use animation
 
 ## Examples of Good Cases
 
 - data changing over a long period of time
 - groups of datapoints varying systematically
 
-Also: it is not necessary to see all the data points at the same time
 
 ### Ask Yourself
 - What information do you want the audience to take away?  
@@ -58,11 +59,11 @@ library(transformr) # insert smooth transformations
 ### **Frame**
 - Animations are a series of single images (frames) strung together
 
+### **State**
+- The current grouping variable being shown. It may be one frame, or a single state representation can stay visible for multiple frames
+
 ### **Transition**
 - How the visual rendering moves from frame to frame
-
-### **State**
-- The current frame at any given point in time
 
 ### **Enter/Exit**
 - How datapoints with no predecessor or follower are handled
@@ -76,9 +77,10 @@ library(transformr) # insert smooth transformations
 Using data on displaced persons living in South Africa, show patterns and trends in refugee movement over twenty-plus years.
 
 **Task:** show complex data across many levels of a facet  
+
 **Problems:** Facet grid and facet wrap rapidly get out of their depth  
 
-Data Source: UNHCR via data.world: [https://data.world/unhcr/244d728f-06e6-4c25-8eed-69e8fe3bffe0](UNHCR's populations of concern residing in South Africa)
+Data Source: UNHCR via data.world: [UNHCR's populations of concern residing in South Africa](https://data.world/unhcr/244d728f-06e6-4c25-8eed-69e8fe3bffe0)
 
 ## Load Data
 
@@ -153,32 +155,14 @@ baseplot2 <- baseplot1 +
 
 ```
 
-## Render
+## Flipped Axis - Render
 
 ```{r, echo=FALSE, fig.width = 10}
 baseplot2
 ```
 
 
-## Adjustment 2: Add Descriptive Labels
-
-```{r, fig.width = 8, fig.height=3}
-baseplot2 <- baseplot2 +
-geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
-geom_text(aes(y = X_affected, 
-    label = as.character(X_affected)), 
-    color = "black", vjust = 0.2, hjust = -.5)
-
-```
-
-## Render
-
-```{r, echo=FALSE, fig.width = 10}
-baseplot2
-```
-
-
-## Adjustment 3: Stop the bar grouping (dodge), switch axis to country from year
+## Adjustment 2: Stop the bar grouping (dodge), switch axis to country from year
 
 Can't use the same stub now.
 ```{r}
@@ -190,15 +174,12 @@ aes(x=rank,
 theme_bw()+
 theme(legend.position = "bottom")+
 geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
-geom_text(aes(y = X_affected, 
-    label = as.character(X_affected)), 
-    color = "black", vjust = 0.2, hjust = -.5)+
 coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) +
 geom_bar(aes(y = X_affected), stat = "identity", position = "identity")
 
 ```
 
-## Render
+## Stop Grouping - Render
 
 ```{r, echo=FALSE, fig.width = 10}
 baseplot3
@@ -229,7 +210,7 @@ theme(legend.position = "none",
 
 ```
 
-## Render
+## Drop Legend - Render
 
 ```{r, echo=FALSE, fig.width = 10}
 baseplot3
@@ -247,7 +228,7 @@ scale_x_reverse()
 ```
 
 
-## Render
+## Reverse X - Render
 
 Now we have the different "frames" all layered on top of each other.
 ```{r, echo = FALSE, fig.width = 10}
@@ -283,42 +264,45 @@ Definitely not.
 
 ## Basic Version
 
+Literally add one more line of code to your ggplot object.
 
 ```{r}
 
 animp <- baseplot3 +
-transition_states(
-    X_date_year)
+transition_states(X_date_year)
 
 ```
 
-## Render
+## Basic Animation - Render
 
-- Moving between frames without transition smoothing   
-- Audience can't tell what the frames represent  
-- Y axis needs labeling  
+It's nice, but we can do better
+1. Viewer can't tell what the frames represent  
+2. Y axis needs labeling
+3. Bars need clear labels
+4. It's moving abruptly between frames  
 
-```{r, fig.width = 10, fig.height=6, echo = FALSE}
-
+```{r, fig.width = 10, fig.height=5, echo = FALSE}
 animate(animp, fps = 10, duration = 20) 
-
 ```
 
 
-## Second Iteration
+## Add Dynamic Labels
 
-Added a descriptive title/label that indicate the year of the frame
+Solving Problem 1 and 2: Added a descriptive title/label that indicate the year of the frame
 
 ```{r}
 
 animp <- baseplot3 +
+  geom_text(aes(y = X_affected, 
+    label = as.character(X_affected)), 
+    color = "black", vjust = 0.2, hjust = -.5)+
   labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
     , y="Affected Persons")+
   transition_states(X_date_year)
 
 ```
 
-## Render
+## Dynamic Labels - Render
 
 ```{r, fig.width = 10, fig.height=6, echo = FALSE}
 
@@ -328,22 +312,28 @@ animate(animp, fps = 10, duration = 20)
 
 ## Transition Options: Exit/Enter
 
-Shrink and grow on exit and enter
+Solving Problem 3: how do we want the animation elements to move?
+
+Option: shrink and grow on exit and enter
+
 ```{r}
 
 animp <- baseplot3 +
-labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
-  , y="Affected Persons")+
-transition_states(X_date_year)+
-enter_grow() +
-exit_shrink()
+  geom_text(aes(y = X_affected, 
+    label = as.character(X_affected)), 
+    color = "black", vjust = 0.2, hjust = -.5)+
+  labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
+    , y="Affected Persons")+
+  transition_states(X_date_year)+
+  enter_grow() +
+  exit_shrink()
 
 ```
 
 
-## Render
+## Exit/Enter - Render
 
-Interesting, but probably not serving the project objectives
+It's interesting, but probably not serving the project objectives
 
 ```{r, fig.width = 10, fig.height=6, echo = FALSE}
 
@@ -354,21 +344,27 @@ animate(animp, fps = 10, duration = 20)
 
 ## Transition Options: Easing
 
-Ease between positions (moving on page, not exiting or entering)
+Solving Problem 3: how do we want the animation elements to move?
+
+Option: Ease between positions (moving on page, not exiting or entering)
+
 ```{r}
 
 animp <- baseplot3 +
-labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
+  geom_text(aes(y = X_affected, 
+    label = as.character(X_affected)), 
+    color = "black", vjust = 0.2, hjust = -.5)+
+  labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
   , y="Affected Persons")+
-transition_states(X_date_year)+
-ease_aes('quartic-in-out')
+  transition_states(X_date_year)+
+  ease_aes('quartic-in-out')
 
 ```
 
 
-## Render
+## Easing Transitions - Render
 
-Hopefully, the movement feels less abrasive to the eye
+Hopefully, the movement feels less abrasive to the eye now
 
 ```{r, fig.width = 10, fig.height=6, echo = FALSE}
 
@@ -376,21 +372,27 @@ animate(animp, fps = 10, duration = 20)
 
 ```
 
-## Transition Options: Easing
-For fun, let's try "back" to see a springier approach
+## Transition Options: More Energetic
+
+Solving Problem 3: how do we want the animation elements to move?
+
+Option: For fun, let's try "back" to see a springier approach
 
 ```{r}
 
 animp <- baseplot3 +
-labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
+  geom_text(aes(y = X_affected, 
+    label = as.character(X_affected)), 
+    color = "black", vjust = 0.2, hjust = -.5)+
+  labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
   , y="Affected Persons")+
-transition_states(X_date_year)+
-ease_aes('back-in-out')
+  transition_states(X_date_year)+
+  ease_aes('back-in-out')
 
 ```
 
 
-## Render
+## Bouncy Transitions - Render
 
 Feels a little cartoony- interesting, but again perhaps not what we need
 
@@ -402,29 +404,33 @@ animate(animp, fps = 10, duration = 20)
 
 ## Transition Options: Timing
 
+Solving Problem 3: how do we want the animation elements to move?
+
+In addition to entry, exit, and transition easing:  
+
 - Set pace for the states/transitions  
 - Ensure no smoothing between the end and restarting  
 
 ```{r}
 
 animp <- baseplot3 +
-labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
-  , y="Affected Persons")+
-transition_states(
-    X_date_year,
-    transition_length = 4, 
-    state_length = c(rep(3, 21), 30), 
-    wrap = FALSE)+
-ease_aes('quartic-in-out')+
-enter_fade() +
-exit_fade()
+  geom_text(aes(y = X_affected, 
+    label = as.character(X_affected)), 
+    color = "black", vjust = 0.2, hjust = -.5)+
+  labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
+    , y="Affected Persons")+
+  transition_states(X_date_year,transition_length = 5, 
+      state_length = c(rep(.5, 21), 30), wrap = FALSE)+
+  ease_aes('linear')+
+  enter_fade() +
+  exit_fade()
 
 ```
 
 
-## Render
+## Set Timings - Render
 
-Slower pace feels smoother
+Slower pace feels smoother, and doesn't insinuate that the last frame and the first flow into each other
 
 ```{r, fig.width = 10, fig.height=6, echo = FALSE}
 
@@ -432,14 +438,15 @@ animate(animp, fps = 10, duration = 20)
 
 ```
 
-## Dissect Animation Code: Transition States
+## Transition States - What Does It Do?
 
 ```{r, eval=FALSE}
-transition_states(
+  transition_states(
     X_date_year,
-    transition_length = 4, 
-    state_length = c(rep(1, 21), 30)
-  , wrap = FALSE)
+    transition_length = 5, 
+    state_length = c(rep(.5, 21), 30),
+    wrap = FALSE)+
+  
 ```
 
 Assign the frame unit- here we use the year.  
@@ -470,9 +477,12 @@ anim_save(filename = "final_race_plot.gif")
 
 ## Lessons to Take Away
 
-Figure out the in/out transitions that make sense and are not misleading
+Figure out the in/out transitions that make sense and are not misleading/distracting
 
 Give the eye enough time to understand each state
+
+Make your plot serve the audience, don't be fancy if it's not helpful
+
 
 ## References
 
