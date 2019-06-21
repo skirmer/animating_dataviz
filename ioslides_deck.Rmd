@@ -63,7 +63,7 @@ library(transformr) # insert smooth transformations
 - The current grouping variable being shown. It may be one frame, or a single state representation can stay visible for multiple frames
 
 ### **Transition**
-- How the visual rendering moves from frame to frame
+- How the visual rendering moves from state to state
 
 ### **Enter/Exit**
 - How datapoints with no predecessor or follower are handled
@@ -79,6 +79,8 @@ Using data on displaced persons living in South Africa, show patterns and trends
 **Task:** show complex data across many levels of a facet  
 
 **Problems:** Facet grid and facet wrap rapidly get out of their depth  
+
+Follow along with the notebook: https://github.com/skirmer/animating_dataviz/blob/master/ioslides_deck.Rmd 
 
 Data Source: UNHCR via data.world: [UNHCR's populations of concern residing in South Africa](https://data.world/unhcr/244d728f-06e6-4c25-8eed-69e8fe3bffe0)
 
@@ -125,6 +127,8 @@ knitr::kable(head(plotDT, 4))
 
 ## Grouped Bar Plot - Code
 
+Group by country, bar height is affected persons
+
 ```{r}
 baseplot1 <- ggplot(plotDT, 
 aes(X_date_year, 
@@ -139,11 +143,16 @@ geom_bar(aes(y = X_affected), stat = "identity", position = "dodge")
 
 ## Grouped Bar Plot - Rendered
 
-Ew.
+Ew. This is not effective.
+
 
 ```{r, echo=FALSE, fig.width = 10}
 baseplot1
 ```
+
+## What if we try to make a race plot instead?
+
+![Let's make this!](final_race_plot2.gif)
 
 
 ## Adjustment 1: Flip Axis
@@ -151,8 +160,6 @@ baseplot1
 ```{r, fig.width = 8, fig.height=4}
 baseplot2 <- baseplot1 +
     coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000))
-
-
 ```
 
 ## Flipped Axis - Render
@@ -197,7 +204,7 @@ baseplot2 + baseplot3 + plot_layout(ncol = 2)
 ```
 
 
-## Adjustment 4: Adjust margins, fix axis text, drop legend
+## Adjustment 3: Adjust margins, fix axis text, drop legend
 
 If your stub has a `theme()` segment, applying a new one will overrule it.
 ```{r}
@@ -217,7 +224,7 @@ baseplot3
 ```
 
 
-## Adjustment 5: Prettify Y, reverse X direction
+## Adjustment 4: Prettify Y, reverse X direction
 
 ```{r}
 
@@ -275,14 +282,15 @@ transition_states(X_date_year)
 
 ## Basic Animation - Render
 
-It's nice, but we can do better
-1. Viewer can't tell what the frames represent  
-2. Y axis needs labeling
-3. Bars need clear labels
-4. It's moving abruptly between frames  
+It's nice, but we can do better  
 
-```{r, fig.width = 10, fig.height=5, echo = FALSE}
-animate(animp, fps = 10, duration = 20) 
+1. Viewer can't tell what the frames represent  
+2. Y axis needs labeling  
+3. Bars need clear labels  
+4. It's moving abruptly between frames   
+
+```{r, fig.width = 8, fig.height=4, echo = FALSE}
+animate(animp, fps = 10, duration = 20, height = 300) 
 ```
 
 
@@ -420,7 +428,7 @@ animp <- baseplot3 +
   labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
     , y="Affected Persons")+
   transition_states(X_date_year,transition_length = 5, 
-      state_length = c(rep(.5, 21), 30), wrap = FALSE)+
+      state_length = c(rep(.25, 21), 20), wrap = FALSE)+
   ease_aes('linear')+
   enter_fade() +
   exit_fade()
@@ -444,7 +452,7 @@ animate(animp, fps = 10, duration = 20)
   transition_states(
     X_date_year,
     transition_length = 5, 
-    state_length = c(rep(.5, 21), 30),
+    state_length = c(rep(.25, 21), 20),
     wrap = FALSE)+
   
 ```
@@ -465,14 +473,14 @@ Experiment with these settings to get the look you want!
 ## Render the Final Animation
 
 ```{r, fig.width = 10, fig.height=6, eval=TRUE} 
-animate(animp, fps = 10, duration = 20, width = 700, height = 400) 
+animate(animp, fps = 10, duration = 20, width = 800, height = 450) 
 ```
 
 
 ## Save the Animation
 
 ```{r, eval=FALSE} 
-anim_save(filename = "final_race_plot.gif")
+anim_save(filename = "final_race_plot2.gif")
 ```
 
 ## Lessons to Take Away
