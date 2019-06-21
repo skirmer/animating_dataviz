@@ -285,9 +285,8 @@ transition_states(X_date_year)
 It's nice, but we can do better  
 
 1. Viewer can't tell what the frames represent  
-2. Y axis needs labeling  
-3. Bars need clear labels  
-4. It's moving abruptly between frames   
+2. Y axis needs labeling, bars need clear labels  
+3. It's moving abruptly between frames   
 
 ```{r, fig.width = 8, fig.height=4, echo = FALSE}
 animate(animp, fps = 10, duration = 20, height = 300) 
@@ -296,7 +295,7 @@ animate(animp, fps = 10, duration = 20, height = 300)
 
 ## Add Dynamic Labels
 
-Solving Problem 1 and 2: Added a descriptive title/label that indicate the year of the frame
+Solving Problem 1 and 2: Added a descriptive title/label that indicate the year of the frame, label bars
 
 ```{r}
 
