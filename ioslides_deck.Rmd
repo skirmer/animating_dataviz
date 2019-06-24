@@ -1,6 +1,6 @@
 ---
 title: "Animating Plots in R"
-subtitle: "Data Visualization Society x R Ladies Chicago"
+subtitle: "Chicago Data Viz Community x R Ladies Chicago"
 author: "Stephanie Kirmer <BR> [www.stephaniekirmer.com](http://www.stephaniekirmer.com) <BR> @[data_stephanie](http://www.twitter.com/data_stephanie)"
 date: "July 24 2019"
 output: 
