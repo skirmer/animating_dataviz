@@ -1,25 +1,31 @@
 ---
 title: "Animating Plots in R"
-author: "Stephanie Kirmer"
-date: "June 2019"
+subtitle: "Data Visualization Society x R Ladies Chicago"
+author: "Stephanie Kirmer <BR> [www.stephaniekirmer.com](http://www.stephaniekirmer.com) <BR> @[data_stephanie](http://www.twitter.com/data_stephanie)"
+date: "July 24 2019"
 output: 
     ioslides_presentation:
         widescreen: true
 ---
 
+```{r, include = FALSE}
+library(gapminder)
+library(ggplot2)
+library(gganimate)
 
-# Agenda
+```
 
-**Animation: When and Why?**
+# Agenda | <BR> Animation: When and Why? <BR> Introducing the Tools <BR> Hands-On Tutorial
 
-**Introducing the Tools**
+# Follow Along! | https://github.com/skirmer/animating_dataviz
 
-**Hands-On Tutorial**
+<div class="notes">
+Introductions, get the about-me out of the way and give a quick overview
+
+</div>
 
 
-## So You're Thinking About Animating
-
-What are some reasons to animate a plot?
+## So You're Thinking About Animating | What are some reasons to animate a plot?
 
 ### **Bad Reasons**
 
@@ -34,30 +40,124 @@ What are some reasons to animate a plot?
 
 Also: If you need to see all the data points at the same time DON'T use animation
 
-## Examples of Good Cases
+<div class="notes">
+Balance between encouragement and caution
 
-- data changing over a long period of time
-- groups of datapoints varying systematically
+Time does not necessarily need to be represented in actual temporality  
+Talk about what Meaningful Data Dimensions means   
+Talk about levels of dimension as factor  
 
+</div>
 
-### Ask Yourself
+## Use Case Ideas
+
+<div class="columns-2">
+
+```{r, echo = FALSE, cache=TRUE}
+
+samplep <- ggplot(gapminder, aes(gdpPercap, lifeExp, size = pop, colour = country)) +
+  geom_point(alpha = 0.7, show.legend = FALSE) +
+  scale_colour_manual(values = country_colors) +
+  scale_size(range = c(2, 12)) +
+  scale_x_log10() +
+  facet_wrap(~continent, ncol = 2) +
+  labs(title = 'Year: {frame_time}', x = 'GDP per capita', y = 'life expectancy') +
+  transition_time(year) +
+  ease_aes('linear')
+
+animate(samplep, width = 450) 
+```
+
+<BR>
+
+Thomas Lin Pedersen's example from https://gganimate.com - (@[thomasp85](https://twitter.com/thomasp85))
+
+- Data in meaningful groups changing over long periods of time  
+- What does this plot actually tell the viewer?  
+
+</div>
+
+<div class="notes">
+TLP is the creator of gganimate- encourage people to check his stuff out  
+Discuss this specific plot- what can you learn from it and what is it not good for?  
+
+- trends? y/n   
+- comparisons across continents? y/n   
+- comparisons within continents across countries? y/n  
+
+</div>
+
+## More Good Examples {.smaller}
+<div class="columns-2">
+
+### Multiple animations
+- Mikey Harper: https://mikeyharper.uk/animated-plots-with-r/    
+
+### GIS
+- Daniela Vasquez: https://d4tagirl.com/2017/05/how-to-plot-animated-maps-with-gganimate  
+
+### Forecasting
+- Hao Ye: https://haoye.us/post/2018-09-03-gganimate/  
+- Troy @ Peak Maximum [https://peakmaximum.com/](https://peakmaximum.com/2018/12/22/visualizing-prophet-with-gganimate/)   
+
+<BR>
+
+### Shadowing
+- Len Kiefer: https://twitter.com/lenkiefer/status/1102274364995719169 
+
+### Model Performance
+- Dariya Sydykova: [https://github.com/dariyasydykova](https://github.com/dariyasydykova/open_projects/tree/master/ROC_animation)    
+
+### Groups Over Time with Reveal
+- Jovan Lekovic: [https://constantlyplotting.com/](https://constantlyplotting.com/snapshots-young-people-arent-watching-much-tv/)    
+
+</div>
+
+<div class="notes">
+Show these examples in realtime - tell people to google for more to get ideas
+It can be hard to imagine your data in an animation, so looking at examples of how other people do it can be v helpful
+</div>
+
+## How to Think About the Design
+
 - What information do you want the audience to take away?  
+- Movement leads the viewer to interpretation of the data - this can be good or bad  
+- Speed creates meaning, be conscious of that  
+- Each static frame should be informative alone as well  
+
+(Be open to the idea that you might not need animation to be most effective)  
+
+<div class="notes">
+Thinking about your own data and planning ahead is huge
+
+</div>
+
 
 # The Tools
 
-
-## Packages to Use
+## Key Packages to Get
 ```{r}
 library(ggplot2) # make plots
 library(gganimate) # animate the plots
 library(gifski) # render gifs
-library(transformr) # insert smooth transformations
 ```
+
+Optional, maybe interesting packages
+```{r}
+library(transformr) # additional smooth transformations
+library(patchwork) # arrange multiple plots in a single layout
+library(ggforce) # extended options for ggplot functionality
+```
+
+<div class="notes">
+To make the example here work, you need the first three for sure- some different transformation options are made available with the fourth
+
+</div>
 
 ## Key Concepts
 
 ### **Frame**
-- Animations are a series of single images (frames) strung together
+- Animations are a series of single images (frames) strung together (think of "frames per second")
 
 ### **State**
 - The current grouping variable being shown. It may be one frame, or a single state representation can stay visible for multiple frames
@@ -68,7 +168,13 @@ library(transformr) # insert smooth transformations
 ### **Enter/Exit**
 - How datapoints with no predecessor or follower are handled
 
-
+<div class="notes">
+These are really concepts in the space of animation generally   
+Think about old timey cartooning, or flipbooks- one cel at a time, moving past you quick enough that it looks like movement  
+What we are doing here is not dissimilar.  
+Frame: a measure of time. State: a property of your data.
+Option: look back at the examples from earlier and talk about what the states are?
+</div>
 
 # Tutorial
 
@@ -76,13 +182,19 @@ library(transformr) # insert smooth transformations
 
 Using data on displaced persons living in South Africa, show patterns and trends in refugee movement over twenty-plus years.
 
-**Task:** show complex data across many levels of a facet  
+1. Where do most refugees come from?   
 
-**Problems:** Facet grid and facet wrap rapidly get out of their depth  
+    - These may be places with high instability or political turmoil at a given time  
+2. Over time, are the most common countries of origin about the same?   
+3. Is the number of refugees coming from the most common countries of origin stable?
 
 Follow along with the notebook: https://github.com/skirmer/animating_dataviz/blob/master/ioslides_deck.Rmd 
 
 Data Source: UNHCR via data.world: [UNHCR's populations of concern residing in South Africa](https://data.world/unhcr/244d728f-06e6-4c25-8eed-69e8fe3bffe0)
+
+<div class="notes">
+Example for today's purposes - no special reason
+</div>
 
 ## Load Data
 
@@ -90,6 +202,8 @@ Grab dataset of displaced persons living in South Africa
 ```{r, echo = FALSE}
 dtset <- read.csv("data/unhcr-time-series-residing-zaf-csv-1.csv", skip = 1)
 names(dtset) <- gsub("\\.", "_", names(dtset))
+
+dtset <- dplyr::filter(dtset, X_date_year > 1995)
 
 knitr::kable(head(dtset, 4))
 ```
@@ -106,7 +220,6 @@ library(dplyr)
 plotDT <- dtset %>%
   filter(X_country_origin != "Various/Unknown") %>%
   filter(X_population_type == "Refugees (incl. refugee-like situations)") %>%
-  filter(X_date_year > 1995) %>%
   group_by(X_date_year) %>%
   mutate(rank = rank(-X_affected, ties.method = "first") * 1) %>%
   ungroup() %>%
@@ -116,7 +229,6 @@ plotDT <- dtset %>%
 
 ```{r, echo = FALSE}
 plotDT$X_country_origin <- ifelse(plotDT$X_country_origin == "Serbia and Kosovo (S/RES/1244 (1999))", "Serbia/Kosovo", as.character(plotDT$X_country_origin))
-plotDT$state_time <- ifelse(plotDT$X_date_year == max(plotDT$X_date_year), 5, 1)
 ```
 
 ## Our New Data
@@ -159,7 +271,9 @@ baseplot1
 
 ```{r, fig.width = 8, fig.height=4}
 baseplot2 <- baseplot1 +
-    coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000))
+  ### <b>
+  coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000))
+  ### </b>
 ```
 
 ## Flipped Axis - Render
@@ -174,16 +288,19 @@ baseplot2
 Can't use the same stub now.
 ```{r}
 baseplot3 <- ggplot(plotDT, 
-aes(x=rank, 
+### <b>
+  aes(x=rank, 
     group = X_country_origin, 
     fill = as.factor(X_country_origin), 
     color = as.factor(X_country_origin)))+
+### </b>
 theme_bw()+
 theme(legend.position = "bottom")+
 geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
 coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) +
-geom_bar(aes(y = X_affected), stat = "identity", position = "identity")
-
+### <b>
+  geom_bar(aes(y = X_affected), stat = "identity", position = "identity")
+### </b>
 ```
 
 ## Stop Grouping - Render
@@ -209,11 +326,13 @@ baseplot2 + baseplot3 + plot_layout(ncol = 2)
 If your stub has a `theme()` segment, applying a new one will overrule it.
 ```{r}
 baseplot3 <- baseplot3 + 
-theme(legend.position = "none",
-    axis.ticks.y = element_blank(),  # These relate to the axes post-flip
-    axis.text.y  = element_blank(),  # These relate to the axes post-flip
+### <b>
+  theme(legend.position = "none",
+    axis.ticks.y = element_blank(), 
+    axis.text.y  = element_blank(), 
     axis.title.y = element_blank(),
     plot.margin = margin(1,1,1,5, "cm"))
+### </b>
 
 ```
 
@@ -229,9 +348,10 @@ baseplot3
 ```{r}
 
 baseplot3 <- baseplot3 +
+### <b>
 scale_y_continuous(labels = scales::comma) +
 scale_x_reverse()
-
+### </b>
 ```
 
 
@@ -242,13 +362,15 @@ Now we have the different "frames" all layered on top of each other.
 baseplot3
 ```
 
-## Decision Point: How to Proceed?
-We need to present the data on an annual basis in a way that tells us:
+## Decision Point: How to Proceed? | Before continuing - are we SURE animation is our best option?
 
-1. What locations refugees come from  
-    - These may be places with high instability or political turmoil at a given time
+Revisit our goals:
 
-2. How the top locations within a year compare to the other top 10 locations
+1. Where do most refugees come from?   
+2. Over time, are the most common countries of origin about the same?   
+3. Is the number of refugees coming from the most common countries of origin stable?  
+
+Let's try static options one last time just to be sure.
 
 ## Faceting?
 
@@ -276,11 +398,17 @@ Literally add one more line of code to your ggplot object.
 ```{r}
 
 animp <- baseplot3 +
-transition_states(X_date_year)
-
+### <b>
+  transition_states(X_date_year)
+### </b>
 ```
 
 ## Basic Animation - Render
+
+<div class="columns-2">
+```{r, fig.width = 8, fig.height=4, echo = FALSE, cache = TRUE}
+animate(animp, fps = 10, duration = 20, height = 400) 
+```
 
 It's nice, but we can do better  
 
@@ -288,10 +416,7 @@ It's nice, but we can do better
 2. Y axis needs labeling, bars need clear labels  
 3. It's moving abruptly between frames   
 
-```{r, fig.width = 8, fig.height=4, echo = FALSE}
-animate(animp, fps = 10, duration = 20, height = 300) 
-```
-
+</div>
 
 ## Add Dynamic Labels
 
@@ -300,18 +425,20 @@ Solving Problem 1 and 2: Added a descriptive title/label that indicate the year 
 ```{r}
 
 animp <- baseplot3 +
+### <b>
   geom_text(aes(y = X_affected, 
     label = as.character(X_affected)), 
     color = "black", vjust = 0.2, hjust = -.5)+
   labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
     , y="Affected Persons")+
+### </b>
   transition_states(X_date_year)
 
 ```
 
 ## Dynamic Labels - Render
 
-```{r, fig.width = 10, fig.height=6, echo = FALSE}
+```{r, fig.width = 10, fig.height=6, echo = FALSE, cache = TRUE}
 
 animate(animp, fps = 10, duration = 20) 
 
@@ -332,8 +459,10 @@ animp <- baseplot3 +
   labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
     , y="Affected Persons")+
   transition_states(X_date_year)+
+### <b>
   enter_grow() +
   exit_shrink()
+### </b>
 
 ```
 
@@ -342,7 +471,7 @@ animp <- baseplot3 +
 
 It's interesting, but probably not serving the project objectives
 
-```{r, fig.width = 10, fig.height=6, echo = FALSE}
+```{r, fig.width = 10, fig.height=6, echo = FALSE, cache = TRUE}
 
 animate(animp, fps = 10, duration = 20) 
 
@@ -364,16 +493,18 @@ animp <- baseplot3 +
   labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
   , y="Affected Persons")+
   transition_states(X_date_year)+
+### <b>  
   ease_aes('quartic-in-out')
+### </b>
 
 ```
 
 
 ## Easing Transitions - Render
 
-Hopefully, the movement feels less abrasive to the eye now
+Makes the transition speed change as it moves (functions may be cubic, quartic, etc)
 
-```{r, fig.width = 10, fig.height=6, echo = FALSE}
+```{r, fig.width = 10, fig.height=6, echo = FALSE, cache = TRUE}
 
 animate(animp, fps = 10, duration = 20) 
 
@@ -394,8 +525,9 @@ animp <- baseplot3 +
   labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
   , y="Affected Persons")+
   transition_states(X_date_year)+
+### <b>
   ease_aes('back-in-out')
-
+### </b>
 ```
 
 
@@ -403,7 +535,7 @@ animp <- baseplot3 +
 
 Feels a little cartoony- interesting, but again perhaps not what we need
 
-```{r, fig.width = 10, fig.height=6, echo = FALSE}
+```{r, fig.width = 10, fig.height=6, echo = FALSE, cache = TRUE}
 
 animate(animp, fps = 10, duration = 20) 
 
@@ -426,8 +558,10 @@ animp <- baseplot3 +
     color = "black", vjust = 0.2, hjust = -.5)+
   labs(title = "Refugees Residing in South Africa by Origin, {closest_state}"
     , y="Affected Persons")+
+### <b>  
   transition_states(X_date_year,transition_length = 5, 
       state_length = c(rep(.25, 21), 20), wrap = FALSE)+
+### </b>
   ease_aes('linear')+
   enter_fade() +
   exit_fade()
@@ -439,13 +573,13 @@ animp <- baseplot3 +
 
 Slower pace feels smoother, and doesn't insinuate that the last frame and the first flow into each other
 
-```{r, fig.width = 10, fig.height=6, echo = FALSE}
+```{r, fig.width = 10, fig.height=6, echo = FALSE, cache = TRUE}
 
 animate(animp, fps = 10, duration = 20) 
 
 ```
 
-## Transition States - What Does It Do?
+## Transition States - What Does It Do? {.smaller}
 
 ```{r, eval=FALSE}
   transition_states(
@@ -456,22 +590,25 @@ animate(animp, fps = 10, duration = 20)
   
 ```
 
-Assign the frame unit- here we use the year.  
+Assign the frame unit - here we use the year.  
 
-Transition length is the period of time we use for change from frame to frame  
+**Transition length**  
+
+- period of time we use for change from frame to frame    
 - slow it down if you want a smooth looking animation   
 
-State length is the period of time where the frame stays static.  
+**State length**  
+
+- period of time where the frame stays static  
 - here I am making the very last frame stay static longer   
 
-Wrap determines whether to apply transition smoothing between the end and restarting  
-
+**Wrap** determines whether to apply transition smoothing between the end and restarting  
 Experiment with these settings to get the look you want!  
 
 
 ## Render the Final Animation
 
-```{r, fig.width = 10, fig.height=6, eval=TRUE} 
+```{r, fig.width = 10, fig.height=6, eval=TRUE, cache = TRUE} 
 animate(animp, fps = 10, duration = 20, width = 800, height = 450) 
 ```
 
@@ -484,16 +621,39 @@ anim_save(filename = "final_race_plot2.gif")
 
 ## Lessons to Take Away
 
-Figure out the in/out transitions that make sense and are not misleading/distracting
+### **1. Do you need animation?**
 
-Give the eye enough time to understand each state
+Prioritize the transmission of information **effectively**  
+Make your plot serve the audience, don't be fancy if it's not helpful  
 
-Make your plot serve the audience, don't be fancy if it's not helpful
+### **2. Make your animation awesome**
+
+Think carefully about transitions and speed  
+
+- Figure out the in/out transitions that make sense and are not misleading/distracting  
+- Give the eye enough time to understand each state  
+
+Get feedback and test your animation on naive viewers  
+
+<div class="notes">
+
+</div>
 
 
-## References
+## Further Links/Reference
 
 https://gganimate.com/
 
 https://ggplot2.tidyverse.org/
 
+https://ggforce.data-imaginist.com/
+
+https://stackoverflow.com/questions/53162821/animated-sorted-bar-chart-with-bars-overtaking-each-other/53163549 (Hat tip to Jon Spring for this awesome starting point for this kind of thing!)
+
+### Even More Examples
+
+- https://twitter.com/WeAreRLadies/status/1123209959020220419
+
+Similar project in D3: https://observablehq.com/@johnburnmurdoch/bar-chart-race-the-most-populous-cities-in-the-world
+
+# Thank you! | [www.stephaniekirmer.com](http://www.stephaniekirmer.com) | @[data_stephanie](http://www.twitter.com/data_stephanie)

@@ -1,0 +1,9 @@
+base
+gapminder
+ggplot2
+gganimate
+magrittr
+dplyr
+patchwork
+gifski
+transformr
