@@ -590,17 +590,17 @@ animate(animp, fps = 10, duration = 20)
   
 ```
 
-Assign the frame unit - here we use the year.  
+Assign the state unit - here we use the year.  
 
 **Transition length**  
 
-- period of time we use for change from frame to frame    
+- period of time we use for change from state to state
 - slow it down if you want a smooth looking animation   
 
 **State length**  
 
-- period of time where the frame stays static  
-- here I am making the very last frame stay static longer   
+- period of time where the state stays static  
+- here I am making the very last state stay static longer   
 
 **Wrap** determines whether to apply transition smoothing between the end and restarting  
 Experiment with these settings to get the look you want!  
