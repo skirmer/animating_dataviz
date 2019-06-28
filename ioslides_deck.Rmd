@@ -609,9 +609,36 @@ Experiment with these settings to get the look you want!
 ## Render the Final Animation
 
 ```{r, fig.width = 10, fig.height=6, eval=TRUE, cache = TRUE} 
-animate(animp, fps = 10, duration = 20, width = 800, height = 450) 
+animate(animp, fps = 30, duration = 20, width = 800, height = 450) 
 ```
 
+<div class="notes">
+
+Shorter duration: faster animation
+More FPS: smoother animation, but bigger file
+
+The Math:
+20 second animation
+10 frames per second
+200 frame animation total
+
+Relative values:
+Static state = .25
+Transition = 5
+
+22 years = 22 static states
+22 transitions, not including start and return to start (no transitions there)
+
+22 x .25 = 5.5
+22 x 5 = 110
+
+200/115.5 = 1.73 frames per state-unit
+
+.43 frames per static state = .043 sec per static state
+8.65 frames per transition = .865 sec per transition
+
+
+</div>
 
 ## Save the Animation
 
