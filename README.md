@@ -2,7 +2,8 @@
 
 Hello! This is the complement to my tutorial about generating animated visualizations in R using ggplot2 and gganimate. If you have questions, you can ask me on Twitter- `@data_stephanie`.
 
-* To view the presentation, visit https://skirmer.github.io/animation_prez.html and click through.  
+* To view the presentation, visit https://skirmer.github.io/animation_prez.html and click through.   
+* To see the short version that I'm using at DC R Conference 2019, visit https://skirmer.github.io/animation_prez_dc.html  
 * To see the underlying code and follow along, use the [ioslides_deck.Rmd](https://github.com/skirmer/animating_dataviz/blob/master/ioslides_deck.Rmd) file in this repo.  
 
 ### Other Examples Using gganimate 
