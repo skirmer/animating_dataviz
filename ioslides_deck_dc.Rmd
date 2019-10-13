@@ -637,4 +637,4 @@ https://stackoverflow.com/questions/53162821/animated-sorted-bar-chart-with-bars
 
 Similar project in D3: https://observablehq.com/@johnburnmurdoch/bar-chart-race-the-most-populous-cities-in-the-world
 
-# Thank you! | [www.stephaniekirmer.com](http://www.stephaniekirmer.com) | @[data_stephanie](http://www.twitter.com/data_stephanie)
+# Thank you! | [www.stephaniekirmer.com](http://www.stephaniekirmer.com) | @[data_stephanie](http://www.twitter.com/data_stephanie) |  [www.journera.com](http://www.journera.com)  
