@@ -1,6 +1,6 @@
 ---
 title: "Animating Plots in R"
-subtitle: "DC R Conference"
+subtitle: "DC R 2019"
 author: "Stephanie Kirmer <BR> [www.stephaniekirmer.com](http://www.stephaniekirmer.com) <BR> @[data_stephanie](http://www.twitter.com/data_stephanie)"
 date: "November 8, 2019"
 output: 
@@ -38,7 +38,7 @@ Introductions, get the about-me out of the way and give a quick overview
 - I have four or more meaningful data dimensions   
 - I want to display many levels of a single dimension  
 
-Also: If you need to see all the data points at the same time DON'T use animation
+Also: If you need to see all the data points at the same time, don't use animation
 
 <div class="notes">
 Balance between encouragement and caution
@@ -118,7 +118,7 @@ Show these examples in realtime - tell people to google for more to get ideas
 It can be hard to imagine your data in an animation, so looking at examples of how other people do it can be v helpful
 </div>
 
-## How to Think About the Design
+## Think About the Design
 
 - What information do you want the audience to take away?  
 - Movement leads the viewer to interpretation of the data - this can be good or bad  
@@ -178,7 +178,7 @@ Option: look back at the examples from earlier and talk about what the states ar
 
 # Building the Viz
 
-## Project Overview
+## Example Project
 
 Using data on displaced persons living in South Africa, show patterns and trends in refugee movement over twenty-plus years.
 
@@ -187,8 +187,6 @@ Using data on displaced persons living in South Africa, show patterns and trends
     - These may be places with high instability or political turmoil at a given time  
 2. Over time, are the most common countries of origin about the same?   
 3. Is the number of refugees coming from the most common countries of origin stable?
-
-Follow along with the notebook: https://github.com/skirmer/animating_dataviz/blob/master/ioslides_deck.Rmd 
 
 Data Source: UNHCR via data.world: [UNHCR's populations of concern residing in South Africa](https://data.world/unhcr/244d728f-06e6-4c25-8eed-69e8fe3bffe0)
 
@@ -261,9 +259,9 @@ baseplot1
 ![Let's make this!](final_race_plot2.gif)
 
 
-## Adjustments
+## Reformat the Plot
 
-Flip axis, stop grouping bars, change to country as group
+Flip axis, change axes and margins, change grouping, etc.  
 
 ```{r}
 baseplot3 <- ggplot(plotDT, 
@@ -274,35 +272,18 @@ baseplot3 <- ggplot(plotDT,
     color = as.factor(X_country_origin)))+
 ### </b>
 theme_bw()+
-theme(legend.position = "bottom")+
-geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
-coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) +
-### <b>
-  geom_bar(aes(y = X_affected), stat = "identity", position = "identity")
-### </b>
-```
-
-## New Visual
-
-```{r, echo=FALSE, fig.width = 10}
-baseplot3
-```
-
-
-## Style Stuff
-
-Adjust margins, fix axis text, drop legend, prettify Y, reverse X direction  
-
-If your stub has a `theme()` segment, applying a new one will overrule it.
-```{r}
-baseplot3 <- baseplot3 + 
 ### <b>
   theme(legend.position = "none",
     axis.ticks.y = element_blank(), 
     axis.text.y  = element_blank(), 
     axis.title.y = element_blank(),
     plot.margin = margin(1,1,1,5, "cm"))+
-  scale_y_continuous(labels = scales::comma) +
+### </b>
+geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
+coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) +
+### <b>
+geom_bar(aes(y = X_affected), stat = "identity", position = "identity")+
+scale_y_continuous(labels = scales::comma) +
 scale_x_reverse()
 ### </b>
 
@@ -372,7 +353,7 @@ It's nice, but we can do better
 
 </div>
 
-## Add Dynamic Labels
+## Improvements
 
 Solving Problem 1 and 2: Added a descriptive title/label that indicate the year of the frame, label bars
 
@@ -402,7 +383,7 @@ animate(animp, fps = 10, duration = 20)
 
 Solving Problem 3: how do we want the animation elements to move?
 
-Option: shrink and grow on exit and enter
+Choose exit and enter styles: grow and shrink?
 
 ```{r}
 
@@ -434,9 +415,9 @@ animate(animp, fps = 10, duration = 20)
 
 ## Transition Options: Easing
 
-Solving Problem 3: how do we want the animation elements to move?
-
-Option: Ease between positions (moving on page, not exiting or entering)
+Choose easing: movement between positions (moving on page, not exiting or entering)  
+Makes the transition speed change as it moves (functions may be cubic, quartic, etc)   
+Here we see `quartic-in-out`
 
 ```{r}
 
@@ -454,9 +435,7 @@ animp <- baseplot3 +
 ```
 
 
-## Easing Transitions - Render
-
-Makes the transition speed change as it moves (functions may be cubic, quartic, etc)
+## Quartic Easing
 
 ```{r, fig.width = 10, fig.height=6, echo = FALSE, cache = TRUE}
 
@@ -464,13 +443,11 @@ animate(animp, fps = 10, duration = 20)
 
 ```
 
-## Transition Options: More Energetic
+## Bouncy Easing
 
-Solving Problem 3: how do we want the animation elements to move?
+Easing `back-in-out`: Feels a little cartoony- interesting, but again perhaps not what we need
 
-Option: For fun, let's try "back" to see a springier approach
-
-```{r}
+```{r, fig.width = 10, fig.height=6, echo = FALSE, cache = TRUE}
 
 animp <- baseplot3 +
   geom_text(aes(y = X_affected, 
@@ -482,22 +459,12 @@ animp <- baseplot3 +
 ### <b>
   ease_aes('back-in-out')
 ### </b>
-```
-
-
-## Bouncy Transitions - Render
-
-Feels a little cartoony- interesting, but again perhaps not what we need
-
-```{r, fig.width = 10, fig.height=6, echo = FALSE, cache = TRUE}
 
 animate(animp, fps = 10, duration = 20) 
 
 ```
 
 ## Transition Options: Timing
-
-Solving Problem 3: how do we want the animation elements to move?
 
 In addition to entry, exit, and transition easing:  
 
