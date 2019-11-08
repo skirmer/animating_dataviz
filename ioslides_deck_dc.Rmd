@@ -1,5 +1,5 @@
 ---
-title: "Animating Plots in R"
+title: "So You're Thinking About Animating a Plot in R"
 subtitle: "DC R 2019"
 author: "Stephanie Kirmer <BR> [www.stephaniekirmer.com](http://www.stephaniekirmer.com) <BR> @[data_stephanie](http://www.twitter.com/data_stephanie)"
 date: "November 8, 2019"
@@ -15,8 +15,6 @@ library(gganimate)
 
 ```
 
-# Agenda | <BR> Animation: When and Why? <BR> Introducing the Tools <BR> Building the Viz
-
 # Follow Along! | https://github.com/skirmer/animating_dataviz
 
 <div class="notes">
@@ -25,7 +23,7 @@ Introductions, get the about-me out of the way and give a quick overview
 </div>
 
 
-## So You're Thinking About Animating | What are some reasons to animate a plot?
+## Should you animate that plot?
 
 ### **Bad Reasons**
 
@@ -43,8 +41,8 @@ Also: If you need to see all the data points at the same time, don't use animati
 <div class="notes">
 Balance between encouragement and caution
 
-Time does not necessarily need to be represented in actual temporality  
-Talk about what Meaningful Data Dimensions means   
+Time does not necessarily need to be represented in actual temporality    
+Talk about what Meaningful Data Dimensions means    
 Talk about levels of dimension as factor  
 
 </div>
@@ -78,8 +76,8 @@ Thomas Lin Pedersen's example from https://gganimate.com - (@[thomasp85](https:/
 </div>
 
 <div class="notes">
-TLP is the creator of gganimate- encourage people to check his stuff out  
-Discuss this specific plot- what can you learn from it and what is it not good for?  
+TLP is the creator of gganimate- encourage people to check his stuff out   
+Discuss this specific plot- what can you learn from it and what is it not good for?   
 
 - trends? y/n   
 - comparisons across continents? y/n   
@@ -114,15 +112,16 @@ Discuss this specific plot- what can you learn from it and what is it not good f
 </div>
 
 <div class="notes">
-Show these examples in realtime - tell people to google for more to get ideas
+Show these examples in realtime - tell people to google for more to get ideas   
 It can be hard to imagine your data in an animation, so looking at examples of how other people do it can be v helpful
 </div>
 
-## Think About the Design
+## Think About Design
 
-- What information do you want the audience to take away?  
-- Movement leads the viewer to interpretation of the data - this can be good or bad  
-- Speed creates meaning, be conscious of that  
+- What information do you want the audience to take away?   
+
+- Movement and speed lead the viewer to interpretation of the data - this can be good or bad  
+
 - Each static frame should be informative alone as well  
 
 (Be open to the idea that you might not need animation to be most effective)  
@@ -172,7 +171,7 @@ To make the example here work, you need the first three for sure- some different
 These are really concepts in the space of animation generally   
 Think about old timey cartooning, or flipbooks- one cel at a time, moving past you quick enough that it looks like movement  
 What we are doing here is not dissimilar.  
-Frame: a measure of time. State: a property of your data.
+Frame: a measure of time. State: a property of your data.   
 Option: look back at the examples from earlier and talk about what the states are?
 </div>
 
@@ -234,14 +233,15 @@ knitr::kable(head(plotDT, 4))
 Group by country, bar height is affected persons
 
 ```{r}
-baseplot1 <- ggplot(plotDT, 
-aes(X_date_year, 
-    group = X_country_origin, 
-    fill = as.factor(X_country_origin), 
-    color = as.factor(X_country_origin)))+
-theme_bw()+
-theme(legend.position = "bottom")+
-geom_bar(aes(y = X_affected), stat = "identity", position = "dodge")
+baseplot1 <- ggplot(
+  plotDT,
+  aes(X_date_year,
+    group = X_country_origin,
+    fill = as.factor(X_country_origin),
+    color = as.factor(X_country_origin))) +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  geom_bar(aes(y = X_affected), stat = "identity", position = "dodge")
 
 ```
 
@@ -254,6 +254,23 @@ Ew. This is not effective.
 baseplot1
 ```
 
+## Can Faceting Solve?
+
+No.
+
+```{r, echo=FALSE, fig.width = 10}
+baseplot1+facet_grid(X_country_origin~.)
+```
+
+## Can Faceting Solve?
+
+Nooooo.
+
+```{r, echo=FALSE, fig.width = 10}
+baseplot1+facet_wrap(X_country_origin~.)
+```
+
+
 ## What if we try to make a race plot instead?
 
 ![Let's make this!](final_race_plot2.gif)
@@ -261,34 +278,50 @@ baseplot1
 
 ## Reformat the Plot
 
-Flip axis, change axes and margins, change grouping, etc.  
+From this...
+
+```{r}
+baseplot1 <- ggplot(plotDT,
+  aes(X_date_year,
+    group = X_country_origin,
+    fill = as.factor(X_country_origin),
+    color = as.factor(X_country_origin))) +
+  theme_bw() +
+  theme(legend.position = "bottom") +
+  geom_bar(aes(y = X_affected), stat = "identity", position = "dodge")
+
+```
+
+## Reformat the Plot
+
+To this!
 
 ```{r}
 baseplot3 <- ggplot(plotDT, 
 ### <b>
   aes(x=rank, 
+  ### </b>
     group = X_country_origin, 
     fill = as.factor(X_country_origin), 
     color = as.factor(X_country_origin)))+
-### </b>
-theme_bw()+
-### <b>
-  theme(legend.position = "none",
+  theme_bw()+
+  ### <b>
+  theme(legend.position = "none", # Give the plot enough space to have labels
     axis.ticks.y = element_blank(), 
     axis.text.y  = element_blank(), 
     axis.title.y = element_blank(),
     plot.margin = margin(1,1,1,5, "cm"))+
-### </b>
-geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
-coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) +
-### <b>
-geom_bar(aes(y = X_affected), stat = "identity", position = "identity")+
-scale_y_continuous(labels = scales::comma) +
-scale_x_reverse()
-### </b>
+  geom_text(aes(y = 0, label = paste(X_country_origin, " ")), vjust = 0.2, hjust = 1) +
+  coord_flip(clip = "off", expand = FALSE, ylim = c(0, 50000)) + # Flip the plot
+  ### </b>
+  geom_bar(aes(y = X_affected), stat = "identity", position = "identity")+
+  ### <b>
+  scale_y_continuous(labels = scales::comma) + 
+  scale_x_reverse()
+  ### </b>
 
 ```
-
+</div>
 
 ## Render
 
@@ -296,33 +329,6 @@ Now we have the different "frames" all layered on top of each other.
 ```{r, echo = FALSE, fig.width = 10}
 baseplot3
 ```
-
-## Decision Point: How to Proceed? | Before continuing - are we SURE animation is our best option?
-
-Revisit our goals:
-
-1. Where do most refugees come from?   
-2. Over time, are the most common countries of origin about the same?   
-3. Is the number of refugees coming from the most common countries of origin stable?  
-
-Let's try static options one last time just to be sure.
-
-## Faceting?
-
-```{r, echo = FALSE, fig.width = 10}
-baseplot3+facet_wrap(X_date_year~.)
-```
-
-No.
-
-
-## Faceting?
-
-```{r, echo = FALSE, fig.width = 10}
-baseplot3+facet_grid(X_date_year~.)
-```
-
-Definitely not.
 
 # Develop the Animation
 
@@ -338,7 +344,7 @@ animp <- baseplot3 +
 ### </b>
 ```
 
-## Basic Animation - Render
+## It's Alive!
 
 <div class="columns-2">
 ```{r, fig.width = 8, fig.height=4, echo = FALSE, cache = TRUE}
@@ -371,7 +377,7 @@ animp <- baseplot3 +
 
 ```
 
-## Dynamic Labels - Render
+## Dynamic Labels
 
 ```{r, fig.width = 10, fig.height=6, echo = FALSE, cache = TRUE}
 
@@ -379,7 +385,7 @@ animate(animp, fps = 10, duration = 20)
 
 ```
 
-## Transition Options: Exit/Enter
+## How Things Move
 
 Solving Problem 3: how do we want the animation elements to move?
 
@@ -402,7 +408,7 @@ animp <- baseplot3 +
 ```
 
 
-## Exit/Enter - Render
+## Exit/Enter
 
 It's interesting, but probably not serving the project objectives
 
@@ -413,10 +419,13 @@ animate(animp, fps = 10, duration = 20)
 ```
 
 
-## Transition Options: Easing
+## How More Things Move
 
-Choose easing: movement between positions (moving on page, not exiting or entering)  
-Makes the transition speed change as it moves (functions may be cubic, quartic, etc)   
+Choose easing:   
+
+* movement between positions (moving on page, not exiting or entering)  
+* transition speed can change as it moves (functions may be cubic, quartic, etc)    
+
 Here we see `quartic-in-out`
 
 ```{r}
@@ -464,7 +473,7 @@ animate(animp, fps = 10, duration = 20)
 
 ```
 
-## Transition Options: Timing
+## How Fast Things Move (Timing)
 
 In addition to entry, exit, and transition easing:  
 
@@ -490,7 +499,7 @@ animp <- baseplot3 +
 ```
 
 
-## Set Timings - Render
+## Set Timings
 
 Slower pace feels smoother, and doesn't insinuate that the last frame and the first flow into each other
 
@@ -500,18 +509,24 @@ animate(animp, fps = 10, duration = 20)
 
 ```
 
-## Transition States - What Does It Do? {.smaller}
+## Transition States Drilldown
+
+<!-- {.smaller} -->
+
+
+<div class="columns-2">
 
 ```{r, eval=FALSE}
   transition_states(
-    X_date_year,
+    states = X_date_year,
     transition_length = 5, 
     state_length = c(rep(.25, 21), 20),
     wrap = FALSE)+
   
 ```
 
-Assign the state unit - here we use the year.  
+
+**States**: Assign the state unit - here we use the year.  
 
 **Transition length**  
 
@@ -523,7 +538,8 @@ Assign the state unit - here we use the year.
 - period of time where the state stays static  
 - here I am making the very last state stay static longer   
 
-**Wrap** determines whether to apply transition smoothing between the end and restarting  
+**Wrap**: determine whether to apply transition smoothing between the end and restarting   
+<BR>
 Experiment with these settings to get the look you want!  
 
 
